@@ -10,17 +10,20 @@ var Colors = {
 };
 
 function load_game() {
+	document.addEventListener('mousemove', handleMouseMove, false);
+
 	create_scene();
 
 	create_lights();
 
 	create_plane();
+	
 	create_sea();
+	
 	create_sky();
 	
-	
-	document.addEventListener('mousemove', handleMouseMove, false);
 	run_game_loop();
+
 }
 
 var mousePos={x:0, y:0};
@@ -28,16 +31,7 @@ var mousePos={x:0, y:0};
 // now handle the mousemove event
 
 function handleMouseMove(event) {
-
-	// here we are converting the mouse position value received 
-	// to a normalized value varying between -1 and 1;
-	// this is the formula for the horizontal axis:
-	
 	var tx = -1 + (event.clientX / WIDTH)*2;
-
-	// for the vertical axis, we need to inverse the formula 
-	// because the 2D y-axis goes the opposite direction of the 3D y-axis
-	
 	var ty = 1 - (event.clientY / HEIGHT)*2;
 	mousePos = {x:tx, y:ty};
 
@@ -51,20 +45,17 @@ var renderer, container;
 
 function create_scene() {
 	console.log("We are getting here");
-	// Get the width and the height of the screen,
+	
 	HEIGHT = window.innerHeight;
 	WIDTH = window.innerWidth;
 
-	// Create the scene
 	scene = new THREE.Scene();
 
-	// Add a fog effect to the scene; same color as the
-	// background color used in the style sheet
 	scene.fog = new THREE.Fog(0xf7d9aa, 100, 950);
 	
 	// Create the camera
 	aspectRatio = WIDTH / HEIGHT;
-	fieldOfView = 60;
+	fieldOfView = 90;
 	nearPlane = 1;
 	farPlane = 10000;
 	camera = new THREE.PerspectiveCamera(
@@ -75,10 +66,12 @@ function create_scene() {
 	);
 	
 	// Set the position of the camera
-	camera.position.x = 10;
-	camera.position.y = 100;
-	camera.position.z = 200;
-	
+	camera.position.x = 0;
+	camera.position.y = 75;
+	camera.position.z = 100;
+	// there has to be a way to rotate the camera
+
+
 	// Create the renderer
 	renderer = new THREE.WebGLRenderer({ 
 		alpha: true, 
@@ -158,16 +151,16 @@ Sea = function(){
 	geom.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
 	
 	// create the material 
-	var mat = new THREE.MeshPhongMaterial({
+	var material = new THREE.MeshPhongMaterial({
 		color:Colors.blue,
 		transparent:true,
-		opacity:.6,
+		opacity:.8,
 		shading:THREE.FlatShading,
 	});
 
 	// To create an object in Three.js, we have to create a mesh 
 	// which is a combination of a geometry and some material
-	this.mesh = new THREE.Mesh(geom, mat);
+	this.mesh = new THREE.Mesh(geom, material);
 
 	// Allow the sea to receive shadows
 	this.mesh.receiveShadow = true; 
@@ -188,89 +181,6 @@ function create_sea(){
 }
 
 
-Coin = function(){
-	this.mesh = new THREE.Object3D();
-	var geom = new THREE.Object3D();
-
-	var mat = new THREE.MeshPhongMaterial({
-		color:Colors.blue,
-	});
-
-	var nCoins = 3;  // only 3 coins at a time
-	for ( var i = 0; i<nCoins; i++){
-		var m = new THREE.MESH(geom, mat);
-
-		m.position.x = i*12;
-		m.position.y = Math.random()*10;
-		m.position.z = Math.random()*10;
-
-		m.rotation.z = 0;
-		m.rotation.y = 0;
-
-		// var s = .1 + Math.random()*.9;
-		var s = .1;
-		m.scale.set(s,s,s);
-		
-		// allow each cube to cast and to receive shadows
-		m.castShadow = true;
-		m.receiveShadow = true;
-		
-		// add the cube to the container we first created
-		this.mesh.add(m);
-	}
-}
-
-Treasure = function(){
-	this.mesh = new THREE.Object3D();
-	
-	// choose a number of clouds to be scattered in the sky
-	this.nCoins = 20;
-	
-	// To distribute the clouds consistently,
-	// we need to place them according to a uniform angle
-	var stepAngle = Math.PI*2 / this.nCoins;
-	
-	// create the clouds
-	for(var i=0; i<this.nCoins; i++){
-		var c = new Coin();
-	 
-		// set the rotation and the position of each cloud;
-		// for that we use a bit of trigonometry
-		var a = stepAngle*i; // this is the final angle of the cloud
-		var h = 750 + Math.random()*200; // this is the distance between the center of the axis and the cloud itself
-
-		// Trigonometry!!! I hope you remember what you've learned in Math :)
-		// in case you don't: 
-		// we are simply converting polar coordinates (angle, distance) into Cartesian coordinates (x, y)
-		c.mesh.position.y = Math.sin(a)*h;
-		c.mesh.position.x = Math.cos(a)*h;
-
-		// rotate the cloud according to its position
-		c.mesh.rotation.z = a + Math.PI/2;
-		// c.mesh.rotation.z = 0;
-
-		// for a better result, we position the clouds 
-		// at random depths inside of the scene
-		// c.mesh.position.z = -400-Math.random()*400;
-		c.mesh.position.z = 0 ;
-		
-		// we also set a random scale for each cloud
-		var s = 1+Math.random()*2;
-		c.mesh.scale.set(s,s,s);
-
-		// do not forget to add the mesh of each cloud in the scene
-		this.mesh.add(c.mesh);  
-	}  
-}
-
-var Treasure;
-
-function create_coins(){
-	treasure = new Treasure();
-	treasure.mesh.position.y = -600;
-	scene.add(treasure.mesh);
-}
-
 Cloud = function(){
 	// Create an empty container that will hold the different parts of the cloud
 	this.mesh = new THREE.Object3D();
@@ -281,11 +191,11 @@ Cloud = function(){
 	
 	// create a material
 	var mat = new THREE.MeshPhongMaterial({
-		color:Colors.white,  
+		color:Colors.pink,  
 	});
 	
 	// duplicate the geometry a random number of times
-	// random is for clouds. Rest others have better definitions
+	// random is only for clouds. Rest others have better definitions
 
 	var nBlocs = 3+Math.floor(Math.random()*3);
 	for (var i=0; i<nBlocs; i++ ){
@@ -296,17 +206,13 @@ Cloud = function(){
 		// set the position and the rotation of each cube randomly
 		m.position.x = Math.random()*10;
 		m.position.y = Math.random()*10;
-		// m.position.z = Math.random()*10;
-		m.position.z = -10;
+		m.position.z = Math.random()*10;
 
 		m.rotation.z = Math.random()*Math.PI*2;
 		m.rotation.y = Math.random()*Math.PI*2;
 		
-		// m.rotation.z = 0;
-		// m.rotation.y = 0;
-		
 		// set the size of the cube randomly
-		var s = .1 + Math.random()*.9;
+		var s = .1 ;
 		m.scale.set(s,s,s);
 		
 		// allow each cube to cast and to receive shadows
@@ -338,7 +244,7 @@ Sky = function(){
 		// set the rotation and the position of each cloud;
 		// for that we use a bit of trigonometry
 		var a = stepAngle*i; // this is the final angle of the cloud
-		var h = 750 + Math.random()*200; // this is the distance between the center of the axis and the cloud itself
+		var h = 550 + Math.random()*200; // this is the distance between the center of the axis and the cloud itself
 
 		// Trigonometry!!! I hope you remember what you've learned in Math :)
 		// in case you don't: 
@@ -352,7 +258,7 @@ Sky = function(){
 
 		// for a better result, we position the clouds 
 		// at random depths inside of the scene
-		c.mesh.position.z = -400-Math.random()*400;
+		c.mesh.position.z = Math.random()%40; 
 		
 		// we also set a random scale for each cloud
 		var s = 1+Math.random()*2;
@@ -387,15 +293,16 @@ var AirPlane = function() {
 	var matCockpit = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
 
 	// we can access a specific vertex of a shape through 
-	// the vertices array, and then move its x, y and z property:
-	geomCockpit.vertices[4].y-=10;
-	geomCockpit.vertices[4].z+=20;
-	geomCockpit.vertices[5].y-=10;
-	geomCockpit.vertices[5].z-=20;
-	geomCockpit.vertices[6].y+=30;
-	geomCockpit.vertices[6].z+=20;
-	geomCockpit.vertices[7].y+=30;
-	geomCockpit.vertices[7].z-=20;
+	// // the vertices array, and then move its x, y and z property:
+	// geomCockpit.vertices[4].y-=10;
+	// geomCockpit.vertices[4].z+=20;
+	// geomCockpit.vertices[5].y-=10;
+	// geomCockpit.vertices[5].z-=20;
+	// geomCockpit.vertices[6].y+=30;
+	// geomCockpit.vertices[6].z+=20;
+	// geomCockpit.vertices[7].y+=30;
+	// geomCockpit.vertices[7].z-=20;
+	// this is to make the cockpit tilted instead of flat
 
 	var cockpit = new THREE.Mesh(geomCockpit, matCockpit);
 	cockpit.castShadow = true;
@@ -403,9 +310,9 @@ var AirPlane = function() {
 	this.mesh.add(cockpit);
 
 	// Create the engine
-	var geomEngine = new THREE.BoxGeometry(20,50,50,1,1,1);
-	var matEngine = new THREE.MeshPhongMaterial({color:Colors.white, shading:THREE.FlatShading});
-	var engine = new THREE.Mesh(geomEngine, matEngine);
+	var engine_geometry = new THREE.BoxGeometry(20,50,50,1,1,1);
+	var engine_material = new THREE.MeshPhongMaterial({color:Colors.white, shading:THREE.FlatShading});
+	var engine = new THREE.Mesh(engine_geometry, engine_material);
 	engine.position.x = 40;
 	engine.castShadow = true;
 	engine.receiveShadow = true;
@@ -447,6 +354,10 @@ var AirPlane = function() {
 	this.propeller.position.set(50,0,0);
 	this.mesh.add(this.propeller);
 
+	this.pilot = new Pilot();
+  	this.pilot.mesh.position.set(-10,27,0);
+  	this.mesh.add(this.pilot.mesh);
+
 	
 };
 
@@ -460,27 +371,7 @@ function create_plane(){
 	scene.add(airplane.mesh);
 }
 
-var main_score = 0.0;
-var health = 0.0
 
-function update_score(){ 
-	main_score += 1;
-
-	// if (main_score == 100.0){
-	// 	x = false;
-	// }
-}
-
-
-function update_health() {
-	health -= 1;
-
-	// if ( health == 0){
-	// 	x = false;
-	// }
-}
-
-var x = new Boolean(true);
 
 
 var Pilot = function(){
@@ -588,20 +479,35 @@ Pilot.prototype.updateHairs = function(){
 	this.angleHairs += 0.16;
 }
 
+var main_score = 0;
+var health = 100;
+var game_play = new Boolean(true);
+
+function update_score(amount){ 
+	main_score += amount;
+}
+
+
+function update_health() {
+	health -= 1;
+
+	if ( health == 0){
+		game_play = false;
+	}
+}
+
 
 function run_game_loop(){
 	// Rotate the propeller, the sea and the sky
 	
-	update_score()
-	// main_score = Math.floor(main_score);
 	var displayScore = document.getElementById("duration");
-	displayScore.innerHTML = 'Score ( duration, for now ): ' + main_score.toFixed(1) + '     Health : ' + health.toFixed() ;
+	displayScore.innerHTML = 'Score : ' + main_score.toFixed() + '     Health : ' + health.toFixed() ;
 	
 	airplane.propeller.rotation.x += 0.3;
 	sea.mesh.rotation.z += .005;
 	sky.mesh.rotation.z += .01;
 
-	// airplane.pilot.updateHairs();
+	airplane.pilot.updateHairs();
 
 	// render the scene
 	renderer.render(scene, camera);
@@ -609,21 +515,39 @@ function run_game_loop(){
 	updatePlane();
 
 	// call the loop function again
-	if (!x){
+	if (!game_play){
 		return;
 	}
 	requestAnimationFrame(run_game_loop);
 
 }
 
+window.onload = function(){
+    var space_bar = 32;
+  	var w = 87;
+  	var s = 83;
+    window.onkeydown = function(key_press){
+        if(key_press.keyCode === space_bar){
+        	game_play = !game_play;
+        	// this way , we can pause the game
+        }
+        else if(key_press.keyCode === s){
+        	airplane.mesh.position.z -= 5;
+        	if (airplane.mesh.position.z <= -500){
+        		airplane.mesh.position.z = -500 ;
+        	}
+        }
+        else if(key_press.keyCode === w){
+        	airplane.mesh.position.z += 5;
+        	if (airplane.mesh.position.z >= camera.position.z-20){
+        		airplane.mesh.position.z = camera.position.z-20;
+        	}
+        }
+    };
+};    
 
-function updatePlane(){
 
-	// let's move the airplane between -100 and 100 on the horizontal axis, 
-	// and between 25 and 175 on the vertical axis,
-	// depending on the mouse position which ranges between -1 and 1 on both axes;
-	// to achieve that we use a normalize function (see below)
-	
+function updatePlane(){	
 	var targetX = normalize(mousePos.x, -1, 1, -100, 100);
 	var targetY = normalize(mousePos.y, -1, 1, 25, 175);
 
@@ -634,7 +558,7 @@ function updatePlane(){
 
 	// Move the plane at each frame by adding a fraction of the remaining distance
 	// Rotate the plane proportionally to the remaining distance
-	airplane.mesh.rotation.z = (targetY-airplane.mesh.position.y)*0.0128;
+	airplane.mesh.rotation.z = (targetY-airplane.mesh.position.y)*0.128;
 	airplane.mesh.rotation.x = (airplane.mesh.position.y-targetY)*0.0064;
 
 }
