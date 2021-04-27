@@ -17,6 +17,8 @@ function load_game() {
 	create_lights();
 
 	create_plane();
+
+	create_enemies();
 	
 	create_sea();
 	
@@ -283,7 +285,112 @@ function create_sky(){
 
 
 
-// now we will go on and try to make the plane
+// now we will go on and try to make the plane and the enemies
+
+var enemy_plane = function() {
+	this.mesh = new THREE.Object3D();
+	var geomCockpit = new THREE.BoxGeometry(80,50,50,1,1,1);
+	var matCockpit = new THREE.MeshPhongMaterial({color:Colors.brownDark, shading:THREE.FlatShading});
+
+	var cockpit = new THREE.Mesh(geomCockpit, matCockpit);
+	cockpit.castShadow = true;
+	cockpit.receiveShadow = true;
+	this.mesh.add(cockpit);
+
+	var engine_geometry = new THREE.BoxGeometry(20,50,50,1,1,1);
+	var engine_material = new THREE.MeshPhongMaterial({color:Colors.white, shading:THREE.FlatShading});
+	var engine = new THREE.Mesh(engine_geometry, engine_material);
+	engine.position.x = -40;
+	engine.castShadow = true;
+	engine.receiveShadow = true;
+	this.mesh.add(engine);
+
+	var geomTailPlane = new THREE.BoxGeometry(15,20,5,1,1,1);
+	var matTailPlane = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
+	var tailPlane = new THREE.Mesh(geomTailPlane, matTailPlane);
+	tailPlane.position.set(35,25,0);
+	tailPlane.castShadow = true;
+	tailPlane.receiveShadow = true;
+	this.mesh.add(tailPlane);
+
+	this.pilot = new Pilot();
+  	this.pilot.mesh.position.set(-10,-27,0);
+  	this.mesh.add(this.pilot.mesh);
+
+  	var geomPropeller = new THREE.BoxGeometry(20,10,10,1,1,1);
+	var matPropeller = new THREE.MeshPhongMaterial({color:Colors.brown, shading:THREE.FlatShading});
+	this.propeller = new THREE.Mesh(geomPropeller, matPropeller);
+	this.propeller.castShadow = true;
+	this.propeller.receiveShadow = true;
+	
+	// blades
+	var geomBlade = new THREE.BoxGeometry(1,100,20,1,1,1);
+	var matBlade = new THREE.MeshPhongMaterial({color:Colors.brownDark, shading:THREE.FlatShading});
+	
+	var blade = new THREE.Mesh(geomBlade, matBlade);
+	blade.position.set(8,0,0);
+	blade.castShadow = true;
+	blade.receiveShadow = true;
+	this.propeller.add(blade);
+	this.propeller.position.set(50,0,0);
+	this.mesh.add(this.propeller);
+}
+
+
+enemies = function(){
+	// Create an empty container
+	this.mesh = new THREE.Object3D();
+	
+	// choose a number of clouds to be scattered in the sky
+	this.nEnemies = 18;
+	
+	// To distribute the clouds consistently,
+	// we need to place them according to a uniform angle
+	var stepAngle = Math.PI*2 / this.nEnemies;
+	
+	// create the clouds
+	for(var i=0; i<this.nEnemies; i++){
+		var c = new enemy_plane();
+		console.log("new plane made");
+	 
+		// set the rotation and the position of each cloud;
+		// for that we use a bit of trigonometry
+		var a = stepAngle*i; // this is the final angle of the cloud
+		var h = 600 + Math.random()*100; // this is the distance between the center of the axis and the cloud itself
+
+		// Trigonometry!!! I hope you remember what you've learned in Math :)
+		// in case you don't: 	
+		// we are simply converting polar coordinates (angle, distance) into Cartesian coordinates (x, y)
+		c.mesh.position.y = Math.sin(a)*h;
+		c.mesh.position.x = Math.cos(a)*h;
+
+		// rotate the cloud according to its position
+		c.mesh.rotation.z = a + Math.PI/2;
+		// c.mesh.rotation.z = 0;
+
+		// for a better result, we position the clouds 
+		// at random depths inside of the scene
+		c.mesh.position.z = Math.random()%40; 
+		
+		// we also set a random scale for each cloud
+		var s = 0.25;
+		c.mesh.scale.set(s,s,s);
+
+		// do not forget to add the mesh of each cloud in the scene
+		this.mesh.add(c.mesh);  
+	}
+
+}
+
+
+var enemy_list;
+
+function create_enemies(){
+	enemy_list = new enemies();
+	enemy_list.mesh.position.y = -600;
+	scene.add(enemy_list.mesh);
+}
+
 
 var AirPlane = function() {
 	
@@ -291,18 +398,6 @@ var AirPlane = function() {
 	
 	var geomCockpit = new THREE.BoxGeometry(80,50,50,1,1,1);
 	var matCockpit = new THREE.MeshPhongMaterial({color:Colors.red, shading:THREE.FlatShading});
-
-	// we can access a specific vertex of a shape through 
-	// // the vertices array, and then move its x, y and z property:
-	// geomCockpit.vertices[4].y-=10;
-	// geomCockpit.vertices[4].z+=20;
-	// geomCockpit.vertices[5].y-=10;
-	// geomCockpit.vertices[5].z-=20;
-	// geomCockpit.vertices[6].y+=30;
-	// geomCockpit.vertices[6].z+=20;
-	// geomCockpit.vertices[7].y+=30;
-	// geomCockpit.vertices[7].z-=20;
-	// this is to make the cockpit tilted instead of flat
 
 	var cockpit = new THREE.Mesh(geomCockpit, matCockpit);
 	cockpit.castShadow = true;
@@ -497,6 +592,8 @@ function update_health() {
 }
 
 
+var game_speed = 0.00001
+
 function run_game_loop(){
 	// Rotate the propeller, the sea and the sky
 	
@@ -506,6 +603,9 @@ function run_game_loop(){
 	airplane.propeller.rotation.x += 0.3;
 	sea.mesh.rotation.z += .005;
 	sky.mesh.rotation.z += .01;
+	enemy_list.mesh.rotation.z += .006 + game_speed;
+
+	game_speed += 0.00000001;
 
 	airplane.pilot.updateHairs();
 
