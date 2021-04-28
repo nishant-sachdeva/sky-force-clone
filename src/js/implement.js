@@ -337,6 +337,7 @@ var enemy_plane = function() {
 }
 
 
+
 enemies = function(){
 	// Create an empty container
 	this.mesh = new THREE.Object3D();
@@ -390,6 +391,40 @@ function create_enemies(){
 	enemy_list.mesh.position.y = -600;
 	scene.add(enemy_list.mesh);
 }
+
+var Bullet = function(){
+	
+	// radius top, radius bottom, height, number of segments on the radius, number of segments vertically
+	var geom = new THREE.CylinderGeometry(2,2, 4,4,14);
+	// var geom = new THREE.BoxGeometry(200,200,200);
+
+	
+	// rotate the geometry on the x axis
+	// geom.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
+	
+	// create the material 
+	var material = new THREE.MeshPhongMaterial({
+		color:Colors.red,
+		transparent:true,
+		opacity:.8,
+		shading:THREE.FlatShading,
+	});
+
+	// To create an object in Three.js, we have to create a mesh 
+	// which is a combination of a geometry and some material
+	this.mesh = new THREE.Mesh(geom, material);
+
+	// Allow the sea to receive shadows
+	this.mesh.receiveShadow = true; 
+}
+
+// Instantiate the sea and add it to the scene:
+
+var bullet_shot;
+
+var friendly_bullets = [];
+var enemy_bullets = [];
+
 
 
 var AirPlane = function() {
@@ -456,6 +491,21 @@ var AirPlane = function() {
 	
 };
 
+AirPlane.prototype.shoot = function(){
+	
+	// initialize a missile object and let it go in it's direction
+	var bullet_shot = new Bullet();
+
+	// push it a little bit at the bottom of the scene
+	bullet_shot.mesh.position.x = this.mesh.position.x;
+	bullet_shot.mesh.position.y = this.mesh.position.y;
+	bullet_shot.mesh.position.z = this.mesh.position.z;
+	// they'll be updated to be the current position of the guy shooting them
+
+	// add the mesh of the sea to the scene
+	scene.add(bullet_shot.mesh);
+	friendly_bullets.push(bullet_shot);
+}
 
 var airplane;
 
@@ -594,6 +644,18 @@ function update_health() {
 
 var game_speed = 0.00001
 
+function updateFriendlyBullets(){
+	// we call the friendly bullets ,and advance them all one by one
+	for(var i = 0, size = friendly_bullets.length; i < size ; i++){
+   		friendly_bullets[i].mesh.position.x += 5;
+
+   		// if (friendly_bullets[i].position.x >= 400){
+   		// 	delete friendly_bullets[i];
+   			// friendly_bullets.splice(i, 1);
+   		// }
+   } 
+}
+
 function run_game_loop(){
 	// Rotate the propeller, the sea and the sky
 	
@@ -613,6 +675,7 @@ function run_game_loop(){
 	renderer.render(scene, camera);
 
 	updatePlane();
+	updateFriendlyBullets();
 
 	// call the loop function again
 	if (!game_play){
@@ -626,6 +689,7 @@ window.onload = function(){
     var space_bar = 32;
   	var w = 87;
   	var s = 83;
+  	var a = 65;
     window.onkeydown = function(key_press){
         if(key_press.keyCode === space_bar){
         	game_play = !game_play;
@@ -642,6 +706,10 @@ window.onload = function(){
         	if (airplane.mesh.position.z >= camera.position.z-20){
         		airplane.mesh.position.z = camera.position.z-20;
         	}
+        }
+        else if(key_press.keyCode === a){
+        	// we have to shoot
+        	airplane.shoot();
         }
     };
 };    
