@@ -624,7 +624,7 @@ Pilot.prototype.updateHairs = function(){
 	this.angleHairs += 0.16;
 }
 
-var main_score = 0;
+var main_score = 0.0;
 var health = 100;
 var game_play = new Boolean(true);
 
@@ -658,9 +658,9 @@ function updateFriendlyBullets(){
 
 function run_game_loop(){
 	// Rotate the propeller, the sea and the sky
-	
+	update_score(0.0001);
 	var displayScore = document.getElementById("duration");
-	displayScore.innerHTML = 'Score : ' + main_score.toFixed() + '     Health : ' + health.toFixed() ;
+	displayScore.innerHTML = 'Score : ' + main_score.toFixed(4) + '     Health : ' + health.toFixed() ;
 	
 	airplane.propeller.rotation.x += 0.3;
 	sea.mesh.rotation.z += .005;
